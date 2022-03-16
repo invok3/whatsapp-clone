@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:chat_bubbles/bubbles/bubble_special_one.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -6,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:whatsappclone/consts.dart';
 
 class ChatPage extends StatefulWidget {
-  final QueryDocumentSnapshot<Map<String, dynamic>> friend;
+  final DataSnapshot friend;
 
   const ChatPage({Key? key, required this.friend}) : super(key: key);
 
@@ -16,15 +18,32 @@ class ChatPage extends StatefulWidget {
 
 class _ChatPageState extends State<ChatPage> {
   TextEditingController messageController = TextEditingController();
-  List<Map<String, String>> messages = [];
-
+  List<DataSnapshot> messages = [];
+  StreamSubscription<DatabaseEvent>? chatListener;
   @override
   void initState() {
     // TODO: implement initState
     messageController.addListener(() {
       setState(() {});
     });
+    chatListener = FirebaseDatabase.instance
+        .ref()
+        .child(
+            "users/${FirebaseAuth.instance.currentUser!.phoneNumber}/messages/${widget.friend.ref.path.split("/").last.replaceAll("%2B", "+")}")
+        .onChildAdded
+        .listen((event) {
+      setState(() {
+        messages.add(event.snapshot);
+      });
+    });
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    chatListener?.cancel();
+    super.dispose();
   }
 
   @override
@@ -42,9 +61,10 @@ class _ChatPageState extends State<ChatPage> {
           children: [
             CircleAvatar(
               backgroundImage: AssetImage("assets/images/placeholder.png"),
-              foregroundImage: widget.friend["profileImage"] == null
+              foregroundImage: widget.friend.child("profileImage").value == null
                   ? null
-                  : NetworkImage(widget.friend["profileImage"]),
+                  : NetworkImage(
+                      widget.friend.child("profileImage").value.toString()),
             ),
             SizedBox(
               width: 8,
@@ -52,7 +72,7 @@ class _ChatPageState extends State<ChatPage> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("${widget.friend['username']}"),
+                Text("${widget.friend.child("username").value}"),
                 Text(
                   "Last Seen ",
                   style: TextStyle(fontSize: 14),
@@ -80,20 +100,17 @@ class _ChatPageState extends State<ChatPage> {
                   child: Column(
                     children: messages
                         .map((e) => BubbleSpecialOne(
-                              text: e.entries
-                                  .firstWhere(
-                                      (element) => element.key == "message")
-                                  .value,
-                              isSender: e.entries
-                                      .firstWhere(
-                                          (element) => element.key == "sender")
-                                      .value !=
-                                  widget.friend.id,
-                              color: e.entries
-                                          .firstWhere((element) =>
-                                              element.key == "sender")
-                                          .value ==
-                                      widget.friend.id
+                              text: e.child("message").value.toString(),
+                              isSender: e.child("sender").value !=
+                                  widget.friend.ref.path
+                                      .split("/")
+                                      .last
+                                      .replaceAll("%2B", "+"),
+                              color: e.child("sender").value ==
+                                      widget.friend.ref.path
+                                          .split("/")
+                                          .last
+                                          .replaceAll("%2B", "+")
                                   ? Colors.white
                                   : Color(0xffd9fdd3),
                               sent: true,
@@ -166,7 +183,10 @@ class _ChatPageState extends State<ChatPage> {
                             Timestamp.now().millisecondsSinceEpoch.toString();
                         String sender =
                             FirebaseAuth.instance.currentUser!.phoneNumber!;
-                        String receiver = widget.friend.id;
+                        String receiver = widget.friend.ref.path
+                            .split("/")
+                            .last
+                            .replaceAll("%2B", "+");
                         FirebaseDatabase.instance
                             .ref()
                             .child('users/$receiver/messages/$sender/$ts')
@@ -185,6 +205,7 @@ class _ChatPageState extends State<ChatPage> {
                           "message": messageController.text,
                           "time": ts.toString()
                         });
+                        messageController.text = "";
                       },
                       child: Padding(
                         padding: const EdgeInsets.all(10.0),

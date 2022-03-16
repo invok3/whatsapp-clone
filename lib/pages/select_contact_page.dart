@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 
 class SelectContactPage extends StatefulWidget {
@@ -10,7 +11,7 @@ class SelectContactPage extends StatefulWidget {
 }
 
 class _SelectContactPageState extends State<SelectContactPage> {
-  QuerySnapshot<Map<String, dynamic>>? docs;
+  DataSnapshot? docs;
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +45,7 @@ class _SelectContactPageState extends State<SelectContactPage> {
                 children: [
                   Text("Select Contact"),
                   Text(
-                    (docs!.size - 1).toString() + " Contacts",
+                    (docs!.children.length - 1).toString() + " Contacts",
                     style: TextStyle(fontSize: 12),
                   )
                 ],
@@ -56,9 +57,9 @@ class _SelectContactPageState extends State<SelectContactPage> {
             ),
             body: SafeArea(
               child: ListView(
-                children: docs!.docs
-                    .map((e) => e.id ==
-                            FirebaseAuth.instance.currentUser!.phoneNumber
+                children: docs!.children
+                    .map((e) => e.child("username").value ==
+                            FirebaseAuth.instance.currentUser!.displayName
                         ? Container()
                         : InkWell(
                             onTap: () {
@@ -77,9 +78,12 @@ class _SelectContactPageState extends State<SelectContactPage> {
                                         backgroundImage: AssetImage(
                                             "assets/images/placeholder.png"),
                                         foregroundImage:
-                                            e.data()["profileImage"] != null
-                                                ? NetworkImage(
-                                                    e.data()["profileImage"])
+                                            e.child("profileImage").value !=
+                                                    null
+                                                ? NetworkImage(e
+                                                    .child("profileImage")
+                                                    .value
+                                                    .toString())
                                                 : null,
                                         radius:
                                             MediaQuery.of(context).size.width /
@@ -94,7 +98,7 @@ class _SelectContactPageState extends State<SelectContactPage> {
                                             CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            "${e.data()['username']}",
+                                            "${e.child('username').value}",
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .titleMedium!
@@ -102,11 +106,14 @@ class _SelectContactPageState extends State<SelectContactPage> {
                                                     fontWeight:
                                                         FontWeight.w600),
                                           ),
-                                          e.data()["status"] != null
+                                          e.child('status').value != null
                                               ? Row(
                                                   children: [
                                                     Text(
-                                                      e.data()["status"],
+                                                      e
+                                                          .child('status')
+                                                          .value
+                                                          .toString(),
                                                       style: TextStyle(
                                                           color: Colors.grey),
                                                     )
@@ -131,14 +138,17 @@ class _SelectContactPageState extends State<SelectContactPage> {
   Future<String?> fetchUsers() async {
     if (docs != null) {
       return null;
+    } else {
+      debugPrint("isNull");
     }
     try {
-      QuerySnapshot<Map<String, dynamic>> x =
-          await FirebaseFirestore.instance.collection("users").get();
+      DataSnapshot x =
+          await FirebaseDatabase.instance.ref().child("info").get();
+      //debugPrint(x.children.first.ref.path);
       setState(() {
         docs = x;
       });
-      debugPrint("Users found: " + x.size.toString());
+      debugPrint("Users found: " + x.children.length.toString());
       return null;
     } catch (e) {
       return "Error: ${e.toString()}";

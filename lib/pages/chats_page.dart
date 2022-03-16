@@ -1,12 +1,11 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart' as cupic;
 import 'package:whatsappclone/consts.dart';
 import 'package:whatsappclone/pages/chat_page.dart';
 import 'package:whatsappclone/pages/select_contact_page.dart';
-import 'package:whatsappclone/pages/welcome_page.dart';
 
 class ChatsPage extends StatefulWidget {
   const ChatsPage({Key? key}) : super(key: key);
@@ -18,14 +17,71 @@ class ChatsPage extends StatefulWidget {
 class _ChatsPageState extends State<ChatsPage>
     with SingleTickerProviderStateMixin {
   late TabController mTabBarController;
-
-  DatabaseEvent? conversations;
+  DataSnapshot? info;
+  StreamSubscription<DatabaseEvent>? convListener;
+  StreamSubscription<DatabaseEvent>? newConvListener;
+  StreamSubscription<DatabaseEvent>? infoListener;
+  DataSnapshot? conversations;
   @override
   void initState() {
     // TODO: implement initState
+    convListener = FirebaseDatabase.instance
+        .ref()
+        .child(
+            "users/${FirebaseAuth.instance.currentUser!.phoneNumber}/messages")
+        .onChildChanged
+        .listen((event) {
+      FirebaseDatabase.instance
+          .ref()
+          .child(
+              "users/${FirebaseAuth.instance.currentUser!.phoneNumber}/messages")
+          .get()
+          .then((value) {
+        setState(() {
+          conversations = value;
+        });
+      });
+    });
+    newConvListener = FirebaseDatabase.instance
+        .ref()
+        .child(
+            "users/${FirebaseAuth.instance.currentUser!.phoneNumber}/messages")
+        .onChildAdded
+        .listen((event) {
+      FirebaseDatabase.instance
+          .ref()
+          .child(
+              "users/${FirebaseAuth.instance.currentUser!.phoneNumber}/messages")
+          .get()
+          .then((value) {
+        setState(() {
+          conversations = value;
+        });
+      });
+    });
+    infoListener = FirebaseDatabase.instance
+        .ref()
+        .child("info")
+        .onChildChanged
+        .listen((event) {
+      FirebaseDatabase.instance.ref().child("info").get().then((value) {
+        setState(() {
+          info = value;
+        });
+      });
+    });
 
     mTabBarController = TabController(length: 4, vsync: this, initialIndex: 1);
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    convListener?.cancel();
+    newConvListener!.cancel();
+    infoListener!.cancel();
+    super.dispose();
   }
 
   @override
@@ -33,12 +89,15 @@ class _ChatsPageState extends State<ChatsPage>
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          QueryDocumentSnapshot<Map<String, dynamic>>? chattoPush =
-              await Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) => SelectContactPage()));
+          DataSnapshot? chattoPush = await Navigator.of(context).push(
+              MaterialPageRoute(builder: (context) => SelectContactPage()));
           if (chattoPush != null) {
+            //debugPrint("Pushing: ${chattoPush.ref.path.split('/').last}");
             Navigator.of(context).push(MaterialPageRoute(
                 builder: (context) => ChatPage(friend: chattoPush)));
+            //     .then((value) {
+            //   setState(() {});
+            // });
           }
         },
         child: Icon(Icons.message),
@@ -91,7 +150,7 @@ class _ChatsPageState extends State<ChatsPage>
                       return Center(child: Text(snapshot.data.toString()));
                     }
                     return ListView(
-                      children: conversations!.snapshot.children.map((conv) {
+                      children: conversations!.children.map((conv) {
                         String time = "";
                         var ts = DateTime.fromMillisecondsSinceEpoch(int.parse(
                             conv.children.last.child("time").value.toString()));
@@ -122,7 +181,22 @@ class _ChatsPageState extends State<ChatsPage>
                                     children: [
                                       CircleAvatar(
                                           backgroundImage: AssetImage(
-                                              "images/assets/placeholder.png"),
+                                              "assets/images/placeholder.png"),
+                                          foregroundImage: info!
+                                                      .child(conv.ref.path
+                                                          .split("/")
+                                                          .last)
+                                                      .child("profileImage")
+                                                      .value ==
+                                                  null
+                                              ? null
+                                              : NetworkImage(info!
+                                                  .child(conv.ref.path
+                                                      .split("/")
+                                                      .last)
+                                                  .child("profileImage")
+                                                  .value
+                                                  .toString()),
                                           radius: MediaQuery.of(context)
                                                   .size
                                                   .width /
@@ -149,10 +223,21 @@ class _ChatsPageState extends State<ChatsPage>
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          conv.ref.path
-                                              .split("/")
-                                              .last
-                                              .replaceAll("%2B", "+"),
+                                          info!
+                                                      .child(conv.ref.path
+                                                          .split("/")
+                                                          .last)
+                                                      .child("username")
+                                                      .value ==
+                                                  null
+                                              ? ""
+                                              : info!
+                                                  .child(conv.ref.path
+                                                      .split("/")
+                                                      .last)
+                                                  .child("username")
+                                                  .value
+                                                  .toString(),
                                           style: Theme.of(context)
                                               .textTheme
                                               .titleMedium!
@@ -225,7 +310,8 @@ class _ChatsPageState extends State<ChatsPage>
           .ref()
           .child(
               "users/${FirebaseAuth.instance.currentUser!.phoneNumber}/messages")
-          .once();
+          .get();
+      info = await FirebaseDatabase.instance.ref().child("info").get();
     } catch (e) {
       return "Error: ${e.toString()}";
     }

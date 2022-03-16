@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
@@ -16,5 +15,6 @@ abstract class FirebaseAPI {
     } catch (e) {
       debugPrint(e.toString());
     }
+    return null;
   }
 }

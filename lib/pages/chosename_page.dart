@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -162,8 +163,12 @@ class _ChoseNamePageState extends State<ChoseNamePage> {
                     return;
                   }
                  try {
-                    await FirebaseFirestore.instance.collection("users").doc(FirebaseAuth.instance.currentUser!.phoneNumber)
-                  .set({"username" : usernameController.text, "profileImage" : FirebaseAuth.instance.currentUser!.photoURL});
+                  //   await FirebaseFirestore.instance.collection("users").doc(FirebaseAuth.instance.currentUser!.phoneNumber)
+                  // .set({"username" : usernameController.text, "profileImage" : FirebaseAuth.instance.currentUser!.photoURL});
+                  //TODO
+                  await FirebaseDatabase.instance.ref().child("info").child(FirebaseAuth.instance.currentUser!.phoneNumber!).set({
+                    "username" : usernameController.text, "profileImage" : FirebaseAuth.instance.currentUser!.photoURL
+                  });
                  } catch (e) {
                    return;
                  }
