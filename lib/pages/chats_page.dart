@@ -169,14 +169,21 @@ class _ChatsPageState extends State<ChatsPage>
                           time = "${ts.hour}:${ts.minute}";
                         }
                         return InkWell(
-                          onTap: () {
+                          onTap: () async {
+                            debugPrint(conv.ref.path
+                                .split("/")
+                                .last
+                                .replaceAll("%2B", "+"));
+                            var x = await FirebaseDatabase.instance
+                                .ref()
+                                .child("info")
+                                .child(conv.ref.path
+                                    .split("/")
+                                    .last
+                                    .replaceAll("%2B", "+"))
+                                .get();
                             Navigator.of(context).push(MaterialPageRoute(
-                                builder: (_) => ChatPage(
-                                      friend: info!.child(conv.ref.path
-                                          .split("/")
-                                          .last
-                                          .replaceAll("%2B", "+")),
-                                    )));
+                                builder: (_) => ChatPage(friend: x)));
                           },
                           child: Padding(
                             padding: const EdgeInsets.all(16.0),

@@ -9,7 +9,6 @@ import 'package:whatsappclone/consts.dart';
 
 class ChatPage extends StatefulWidget {
   final DataSnapshot friend;
-
   const ChatPage({Key? key, required this.friend}) : super(key: key);
 
   @override
