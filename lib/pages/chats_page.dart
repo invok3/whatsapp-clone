@@ -169,7 +169,15 @@ class _ChatsPageState extends State<ChatsPage>
                           time = "${ts.hour}:${ts.minute}";
                         }
                         return InkWell(
-                          onTap: () {},
+                          onTap: () {
+                            Navigator.of(context).push(MaterialPageRoute(
+                                builder: (_) => ChatPage(
+                                      friend: info!.child(conv.ref.path
+                                          .split("/")
+                                          .last
+                                          .replaceAll("%2B", "+")),
+                                    )));
+                          },
                           child: Padding(
                             padding: const EdgeInsets.all(16.0),
                             child: Row(
