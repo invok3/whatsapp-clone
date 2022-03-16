@@ -207,7 +207,7 @@ class _RegisterPageState extends State<RegisterPage> {
               await FirebaseAuth.instance.signInWithCredential(phoneAuthCreds);
             },
             verificationFailed: (ex) {
-              debugPrint("FBVFEX" + ex.toString());
+              debugPrint("verificationFailed" + ex.toString());
             },
             codeSent: (vID, resendToken) {
               Provider.of<UserProvider>(context, listen: false)

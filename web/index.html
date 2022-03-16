@@ -40,14 +40,16 @@
     // https://firebase.google.com/docs/web/setup#available-libraries
   
     // Your web app's Firebase configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyAcucych5rrcv5meCNYut4nDxVIjP-DIAU",
-      authDomain: "whatsapp-clone-46892.firebaseapp.com",
-      projectId: "whatsapp-clone-46892",
-      storageBucket: "whatsapp-clone-46892.appspot.com",
-      messagingSenderId: "441530631491",
-      appId: "1:441530631491:web:6e39cadd45a9a77cdcdbf6"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyAcucych5rrcv5meCNYut4nDxVIjP-DIAU",
+    authDomain: "whatsapp-clone-46892.firebaseapp.com",
+    databaseURL: "https://whatsapp-clone-46892-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "whatsapp-clone-46892",
+    storageBucket: "whatsapp-clone-46892.appspot.com",
+    messagingSenderId: "441530631491",
+    appId: "1:441530631491:web:6e39cadd45a9a77cdcdbf6",
+    measurementId: "G-4VE18M23BQ"
+  };
   
     // Initialize Firebase
     const app = initializeApp(firebaseConfig);

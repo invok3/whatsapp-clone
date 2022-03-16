@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -21,7 +23,12 @@ class VerificationPage extends StatefulWidget {
 
 class _VerificationPageState extends State<VerificationPage> {
   TextEditingController masterTextEditingController = TextEditingController();
+  bool canResend = false;
+  int counter = 60;
 
+  bool isBusy = false;
+  Stream<int> x = Stream.periodic(Duration(seconds: 1), (xx) => xx);
+  StreamSubscription<int>? y;
   @override
   void initState() {
     // TODO: implement initState
@@ -31,7 +38,25 @@ class _VerificationPageState extends State<VerificationPage> {
         showVerificationDialog();
       }
     });
+    y = x.listen((event) {
+      if (counter == 0) {
+        setState(() {
+          canResend = true;
+        });
+      } else {
+        setState(() {
+          counter--;
+        });
+      }
+    });
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    y?.cancel();
+    super.dispose();
   }
 
   @override
@@ -92,10 +117,58 @@ class _VerificationPageState extends State<VerificationPage> {
             ),
           ),
           ListTile(
-            enabled: false,
+            enabled: canResend,
             leading: Icon(Icons.sms),
             title: Text("Resend SMS"),
-            trailing: Text("1:00"),
+            trailing: Text(counter < 10 ? "0:0${counter}" : "0:${counter}"),
+            onTap: () async {
+              if (isBusy) {
+                return;
+              }
+              isBusy = true;
+              if (kIsWeb) {
+                FirebaseAuthException? cError;
+                ConfirmationResult? confirmationResult;
+                try {
+                  confirmationResult = await FirebaseAuth.instance
+                      .signInWithPhoneNumber(widget.phoneNumber);
+                } catch (e) {
+                  debugPrint(e.toString());
+                  isBusy = false;
+                  return;
+                }
+                Provider.of<UserProvider>(context, listen: false).provided(
+                    phoneNumber: widget.phoneNumber,
+                    confirmationResult: confirmationResult);
+                setState(() {
+                  canResend = false;
+                  counter = 60;
+                });
+              } else {
+                try {
+                  await FirebaseAuth.instance.verifyPhoneNumber(
+                      phoneNumber: widget.phoneNumber,
+                      verificationCompleted: (phoneAuthCreds) async {
+                        await FirebaseAuth.instance
+                            .signInWithCredential(phoneAuthCreds);
+                      },
+                      verificationFailed: (ex) {
+                        debugPrint("verificationFailed" + ex.toString());
+                      },
+                      codeSent: (vID, resendToken) {
+                        setState(() {
+                          canResend = false;
+                          counter = 60;
+                        });
+                      },
+                      timeout: Duration(minutes: 1),
+                      codeAutoRetrievalTimeout: (vID) {});
+                } catch (e) {
+                  debugPrint(e.toString());
+                }
+              }
+              isBusy = false;
+            },
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -105,7 +178,7 @@ class _VerificationPageState extends State<VerificationPage> {
             enabled: false,
             leading: Icon(Icons.call),
             title: Text("Call me"),
-            trailing: Text("1:00"),
+            trailing: Text("0:00"),
           ),
         ],
       )),

@@ -1,4 +1,7 @@
+import 'package:chat_bubbles/bubbles/bubble_special_one.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:whatsappclone/consts.dart';
 
@@ -12,6 +15,18 @@ class ChatPage extends StatefulWidget {
 }
 
 class _ChatPageState extends State<ChatPage> {
+  TextEditingController messageController = TextEditingController();
+  List<Map<String, String>> messages = [];
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    messageController.addListener(() {
+      setState(() {});
+    });
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -61,8 +76,30 @@ class _ChatPageState extends State<ChatPage> {
           child: Column(
             children: [
               Expanded(
-                child: Center(
-                  child: Text("data"),
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: messages
+                        .map((e) => BubbleSpecialOne(
+                              text: e.entries
+                                  .firstWhere(
+                                      (element) => element.key == "message")
+                                  .value,
+                              isSender: e.entries
+                                      .firstWhere(
+                                          (element) => element.key == "sender")
+                                      .value !=
+                                  widget.friend.id,
+                              color: e.entries
+                                          .firstWhere((element) =>
+                                              element.key == "sender")
+                                          .value ==
+                                      widget.friend.id
+                                  ? Colors.white
+                                  : Color(0xffd9fdd3),
+                              sent: true,
+                            ))
+                        .toList(),
+                  ),
                 ),
               ),
               Padding(
@@ -72,6 +109,7 @@ class _ChatPageState extends State<ChatPage> {
                   children: [
                     Expanded(
                       child: TextField(
+                        controller: messageController,
                         //maxLines: 10,
                         decoration: InputDecoration(
                             //isCollapsed: true,
@@ -120,11 +158,40 @@ class _ChatPageState extends State<ChatPage> {
                       ),
                     ),
                     ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        if (messageController.text.isEmpty) {
+                          return;
+                        }
+                        String ts =
+                            Timestamp.now().millisecondsSinceEpoch.toString();
+                        String sender =
+                            FirebaseAuth.instance.currentUser!.phoneNumber!;
+                        String receiver = widget.friend.id;
+                        FirebaseDatabase.instance
+                            .ref()
+                            .child('users/$receiver/messages/$sender/$ts')
+                            .set({
+                          "sender": sender,
+                          "receiver": receiver,
+                          "message": messageController.text,
+                          "time": ts
+                        });
+                        FirebaseDatabase.instance
+                            .ref()
+                            .child('users/$sender/messages/$receiver/$ts')
+                            .set({
+                          "sender": sender,
+                          "receiver": receiver,
+                          "message": messageController.text,
+                          "time": ts.toString()
+                        });
+                      },
                       child: Padding(
                         padding: const EdgeInsets.all(10.0),
                         child: Icon(
-                          Icons.send,
+                          messageController.text.isEmpty
+                              ? Icons.mic
+                              : Icons.send,
                           size: 20,
                         ),
                       ),

@@ -13,6 +13,8 @@ Future<void> main() async {
   } else {
     await Firebase.initializeApp(
         options: const FirebaseOptions(
+            databaseURL:
+                "https://whatsapp-clone-46892-default-rtdb.europe-west1.firebasedatabase.app",
             apiKey: "AIzaSyAcucych5rrcv5meCNYut4nDxVIjP-DIAU",
             appId: "whatsapp-clone-46892.firebaseapp.com",
             messagingSenderId: "441530631491",

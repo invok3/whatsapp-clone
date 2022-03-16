@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class SelectContactPage extends StatefulWidget {
@@ -43,7 +44,7 @@ class _SelectContactPageState extends State<SelectContactPage> {
                 children: [
                   Text("Select Contact"),
                   Text(
-                    docs!.size.toString() + " Contacts",
+                    (docs!.size - 1).toString() + " Contacts",
                     style: TextStyle(fontSize: 12),
                   )
                 ],
@@ -56,64 +57,70 @@ class _SelectContactPageState extends State<SelectContactPage> {
             body: SafeArea(
               child: ListView(
                 children: docs!.docs
-                    .map((e) => InkWell(
-                          onTap: () {
-                            Navigator.of(context).pop(e);
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Row(
-                              children: [
-                                Container(
-                                  height: MediaQuery.of(context).size.width / 8,
-                                  width: MediaQuery.of(context).size.width / 8,
-                                  child: CircleAvatar(
-                                      backgroundImage: AssetImage(
-                                          "assets/images/placeholder.png"),
-                                      foregroundImage:
-                                          e.data()["profileImage"] != null
-                                              ? NetworkImage(
-                                                  e.data()["profileImage"])
-                                              : null,
-                                      radius:
-                                          MediaQuery.of(context).size.width /
-                                              16),
-                                ),
-                                Expanded(
-                                  child: Padding(
-                                    padding:
-                                        EdgeInsets.symmetric(horizontal: 8.0),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          "${e.data()['username']}",
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .titleMedium!
-                                              .copyWith(
-                                                  fontWeight: FontWeight.w600),
-                                        ),
-                                        e.data()["status"] != null
-                                            ? Row(
-                                                children: [
-                                                  Text(
-                                                    e.data()["status"],
-                                                    style: TextStyle(
-                                                        color: Colors.grey),
-                                                  )
-                                                ],
-                                              )
-                                            : Container(),
-                                      ],
+                    .map((e) => e.id ==
+                            FirebaseAuth.instance.currentUser!.phoneNumber
+                        ? Container()
+                        : InkWell(
+                            onTap: () {
+                              Navigator.of(context).pop(e);
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    height:
+                                        MediaQuery.of(context).size.width / 8,
+                                    width:
+                                        MediaQuery.of(context).size.width / 8,
+                                    child: CircleAvatar(
+                                        backgroundImage: AssetImage(
+                                            "assets/images/placeholder.png"),
+                                        foregroundImage:
+                                            e.data()["profileImage"] != null
+                                                ? NetworkImage(
+                                                    e.data()["profileImage"])
+                                                : null,
+                                        radius:
+                                            MediaQuery.of(context).size.width /
+                                                16),
+                                  ),
+                                  Expanded(
+                                    child: Padding(
+                                      padding:
+                                          EdgeInsets.symmetric(horizontal: 8.0),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            "${e.data()['username']}",
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleMedium!
+                                                .copyWith(
+                                                    fontWeight:
+                                                        FontWeight.w600),
+                                          ),
+                                          e.data()["status"] != null
+                                              ? Row(
+                                                  children: [
+                                                    Text(
+                                                      e.data()["status"],
+                                                      style: TextStyle(
+                                                          color: Colors.grey),
+                                                    )
+                                                  ],
+                                                )
+                                              : Container(),
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        ))
+                          ))
                     .toList(),
               ),
             ),
