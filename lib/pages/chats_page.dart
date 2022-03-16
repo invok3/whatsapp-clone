@@ -185,7 +185,9 @@ class _ChatsPageState extends State<ChatsPage>
                                           foregroundImage: info!
                                                       .child(conv.ref.path
                                                           .split("/")
-                                                          .last)
+                                                          .last
+                                                          .replaceAll(
+                                                              "%2B", "+"))
                                                       .child("profileImage")
                                                       .value ==
                                                   null
