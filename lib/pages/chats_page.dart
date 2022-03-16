@@ -195,7 +195,8 @@ class _ChatsPageState extends State<ChatsPage>
                                               : NetworkImage(info!
                                                   .child(conv.ref.path
                                                       .split("/")
-                                                      .last)
+                                                      .last
+                                                      .replaceAll("%2B", "+"))
                                                   .child("profileImage")
                                                   .value
                                                   .toString()),
