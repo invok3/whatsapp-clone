@@ -244,7 +244,9 @@ class _ChatsPageState extends State<ChatsPage>
                                           info!
                                                       .child(conv.ref.path
                                                           .split("/")
-                                                          .last)
+                                                          .last
+                                                          .replaceAll(
+                                                              "%2B", "+"))
                                                       .child("username")
                                                       .value ==
                                                   null
@@ -252,7 +254,8 @@ class _ChatsPageState extends State<ChatsPage>
                                               : info!
                                                   .child(conv.ref.path
                                                       .split("/")
-                                                      .last)
+                                                      .last
+                                                      .replaceAll("%2B", "+"))
                                                   .child("username")
                                                   .value
                                                   .toString(),
